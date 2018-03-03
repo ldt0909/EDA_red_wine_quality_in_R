@@ -1,0 +1,262 @@
+---
+title: "Red_Wine_Quality"
+author: "Flora Li"
+---
+
+What factors will influence the quality of red wine? by Flora Li
+========================================================
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Load all of the packages that you end up using in your analysis in this code
+# chunk.
+
+# Notice that the parameter "echo" was set to FALSE for this code chunk. This
+# prevents the code from displaying in the knitted HTML output. You should set
+# echo=FALSE for all code chunks in your file, unless it makes sense for your
+# report to show the code that generated a particular plot.
+
+# The other parameters for "message" and "warning" should also be set to FALSE
+# for other code chunks once you have verified that each plot comes out as you
+# want it to. This will clean up the flow of your report.
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+library(ggplot2)
+library(corrplot)
+library(GGally)
+library(scales)
+library(gridExtra)
+library(dplyr)
+library(knitr)
+library(memisc)
+```
+
+```{r echo=FALSE, Load_the_Data}
+# Load the Data
+raw <- read.csv('wineQualityReds.csv')
+```
+
+# 1. Introduction
+The Red Wine Quality dataset was created by using red and white wine samples. The inputs include objective tests (e.g. PH values) and the output is based on sensory data (median of at least 3 evaluations made by wine experts). Each expert graded the wine quality between 3 (very bad) and 8 (very excellent). This dataset included 1599 observations and effects of 11 different chemical properties.  
+```{r, intro}
+# dimensions of data
+dim(raw)
+# variables in data
+names(raw)
+# print first 10 row
+# head(raw,n=10)
+```
+X is a unique identifier with a integer value. Quality is also an integer value.
+All other values are numeric value. In this dataset, we mainly focus on factors 
+impacting wine quality, so the quality is dependent variable. 
+
+```{r}
+summary(raw)
+```
+From the summary, we can find out the average quality is 5.6 and the median 
+quality is 6. 
+
+# 2. Univariate Plots Section
+
+## Analyzing variable : Quality 
+```{r}
+table(raw$quality)
+```
+```{r}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+ggplot(aes(as.factor(quality),fill= factor(quality)), data = raw) + 
+  geom_bar() +
+  theme_replace() + xlab("quality")+
+  scale_fill_brewer(type = 'seq', palette = 14,guide=guide_legend(title = 'Quality'))
+```
+The plot shows the wine quality basically has a normal distribution. Most of the rating are around 5 and 6. We can classify them into 3 categories:
+* 3-4: poor
+* 5-6: average
+* 7-8: good
+```{r}
+raw$rating <- ifelse(raw$quality <5, 
+                     'bad', ifelse( raw$quality<7, 'average','good'))
+raw$rating<- ordered(raw$rating, levels = c('bad','average','good'))
+# summary(raw$rating)
+# qplot(raw$rating)
+```
+
+Then we can plot the distribution of all the variables.
+
+```{r}
+grid.arrange(qplot(raw$fixed.acidity),
+             qplot(raw$volatile.acidity),
+             qplot(raw$citric.acid),
+             qplot(raw$residual.sugar),
+             qplot(raw$chlorides),
+             qplot(raw$free.sulfur.dioxide),
+             qplot(raw$total.sulfur.dioxide),
+             qplot(raw$density),
+             qplot(raw$pH),
+             qplot(raw$sulphates),
+             qplot(raw$alcohol),
+             qplot(raw$quality),
+             ncol = 4)
+
+             summary(raw$fixed.acidity)
+             summary(raw$volatile.acidity)
+             summary(raw$citric.acid)
+             summary(raw$residual.sugar)
+             summary(raw$chlorides)
+             summary(raw$free.sulfur.dioxide)
+             summary(raw$total.sulfur.dioxide)
+             summary(raw$density)
+             summary(raw$pH)
+             summary(raw$sulphates)
+             summary(raw$alcohol)
+             summary(raw$quality)
+
+
+```
+
+From the plots above, we can find out: 
+1.Density and ph are basically normal distributed.
+2.Fixed and volatile acidity, sulfur dioxides, sulphates, and alcohol are right 
+skewed distributions, with means their means are larger than median.
+3.Residual sugar and chlorides are also right skewed and they have extreme
+outliers.
+
+```{r,test}
+#ggplot(data= raw,aes(x=fixed.acidity))+geom_histogram(binwidth = 0.4)
+#summary(raw$fixed.acidity)
+#ggplot(data= raw,aes(x=volatile.acidity))+geom_histogram(binwidth = 0.1)
+```
+
+
+# Univariate Analysis
+
+### What is the structure of your dataset?
+```{r}
+# data structure 
+str(raw)
+```
+
+### What is/are the main feature(s) of interest in your dataset?
+The quality of red wine is the main feature of interest in this dataset.
+
+### What other features in the dataset do you think will help support your \
+investigation into your feature(s) of interest?
+From the plot above, I think the variables related to acidity (fixed, volatile,
+citric.acid and pH) will influence the taste of red wine. Citric acid provides 
+freshness taste to wines. Thus, better red wine would contain higher citric acid
+rate. Volatile Acidity provides unpleasant and vinegar taste to wines so the 
+lower the volatile acidity, the better the red wine is. Besides, the percentage 
+of alcohol will also influence the quality of wine. With higher percent of
+alcohol, the red wine would have better quality. Residual.sugar dictates how 
+sweet a red wine is and will also have an influence in taste.
+
+### Did you create any new variables from existing variables in the dataset?
+Yes, I created a new variable called rating, which classified all the quality 
+into 3 categories: bad, average and good.
+
+### Of the features you investigated, were there any unusual distributions? \
+Did you perform any operations on the data to tidy, adjust, or change the form \
+of the data? If so, why did you do this?
+
+For the variable "Quality", there are no unusual distributions. It's basically 
+normal distributed. For the other features such as sulphates and acidity,they 
+are long-tailed. I didn't perform any operations such as taking log10 Since 
+they are all independent variables.
+
+
+# Bivariate Plots Section
+
+> **Tip**: Based on what you saw in the univariate plots, what relationships
+between variables might be interesting to look at in this section? Don't limit
+yourself to relationships between a main output feature and one of the
+supporting variables. Try to look at relationships between supporting variables
+as well.
+
+```{r echo=FALSE, Bivariate_Plots}
+winedata <-raw %>% select(c(2:13))
+correlation <- cor(winedata)
+round(correlation,digits = 3)
+corrplot(correlation)
+```
+
+# Bivariate Analysis
+
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. How did the feature(s) of interest vary with other features in \
+the dataset?
+
+### Did you observe any interesting relationships between the other features \
+(not the main feature(s) of interest)?
+
+### What was the strongest relationship you found?
+
+
+# Multivariate Plots Section
+
+> **Tip**: Now it's time to put everything together. Based on what you found in
+the bivariate plots section, create a few multivariate plots to investigate
+more complex interactions between variables. Make sure that the plots that you
+create here are justified by the plots you explored in the previous section. If
+you plan on creating any mathematical models, this is the section where you
+will do that.
+
+```{r echo=FALSE, Multivariate_Plots}
+
+```
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. Were there features that strengthened each other in terms of \
+looking at your feature(s) of interest?
+
+### Were there any interesting or surprising interactions between features?
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the \
+strengths and limitations of your model.
+
+------
+
+# Final Plots and Summary
+
+> **Tip**: You've done a lot of exploration and have built up an understanding
+of the structure of and relationships between the variables in your dataset.
+Here, you will select three plots from all of your previous exploration to
+present here as a summary of some of your most interesting findings. Make sure
+that you have refined your selected plots for good titling, axis labels (with
+units), and good aesthetic choices (e.g. color, transparency). After each plot,
+make sure you justify why you chose each plot by describing what it shows.
+
+### Plot One
+```{r echo=FALSE, Plot_One}
+
+```
+
+### Description One
+
+
+### Plot Two
+```{r echo=FALSE, Plot_Two}
+
+```
+
+### Description Two
+
+
+### Plot Three
+```{r echo=FALSE, Plot_Three}
+
+```
+
+### Description Three
+
+------
+
+# Reflection
+
+> **Tip**: Here's the final step! Reflect on the exploration you performed and
+the insights you found. What were some of the struggles that you went through?
+What went well? What was surprising? Make sure you include an insight into
+future work that could be done with the dataset.
+
+> **Tip**: Don't forget to remove this, and the other **Tip** sections before
+saving your final work and knitting the final report!
