@@ -1,9 +1,9 @@
 ---
-title: "Red_Wine_Quality"
+title: "Red_Wine_Quality_Analysis"
 author: "Flora Li"
 ---
 
-What factors will influence the quality of red wine? by Flora Li
+What factors will influence the quality of red wine? 
 ========================================================
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
@@ -27,6 +27,8 @@ library(gridExtra)
 library(dplyr)
 library(knitr)
 library(memisc)
+library(tidyr)
+library(lattice)
 ```
 
 ```{r echo=FALSE, Load_the_Data}
@@ -67,14 +69,11 @@ ggplot(aes(as.factor(quality),fill= factor(quality)), data = raw) +
   theme_replace() + xlab("quality")+
   scale_fill_brewer(type = 'seq', palette = 14,guide=guide_legend(title = 'Quality'))
 ```
-The plot shows the wine quality basically has a normal distribution. Most of the rating are around 5 and 6. We can classify them into 3 categories:
-* 3-4: poor
-* 5-6: average
-* 7-8: good
+The plot shows the wine quality basically has a normal distribution. Most of the rating are around 5 and 6. 
 ```{r}
-raw$rating <- ifelse(raw$quality <5, 
-                     'bad', ifelse( raw$quality<7, 'average','good'))
-raw$rating<- ordered(raw$rating, levels = c('bad','average','good'))
+# raw$rating <- ifelse(raw$quality <5, 
+#                      'bad', ifelse( raw$quality<7, 'average','good'))
+# raw$rating<- ordered(raw$rating, levels = c('bad','average','good'))
 # summary(raw$rating)
 # qplot(raw$rating)
 ```
@@ -125,7 +124,6 @@ outliers.
 #ggplot(data= raw,aes(x=volatile.acidity))+geom_histogram(binwidth = 0.1)
 ```
 
-
 # Univariate Analysis
 
 ### What is the structure of your dataset?
@@ -138,7 +136,7 @@ str(raw)
 The quality of red wine is the main feature of interest in this dataset.
 
 ### What other features in the dataset do you think will help support your \
-investigation into your feature(s) of interest?
+### investigation into your feature(s) of interest?
 From the plot above, I think the variables related to acidity (fixed, volatile,
 citric.acid and pH) will influence the taste of red wine. Citric acid provides 
 freshness taste to wines. Thus, better red wine would contain higher citric acid
@@ -149,8 +147,7 @@ alcohol, the red wine would have better quality. Residual.sugar dictates how
 sweet a red wine is and will also have an influence in taste.
 
 ### Did you create any new variables from existing variables in the dataset?
-Yes, I created a new variable called rating, which classified all the quality 
-into 3 categories: bad, average and good.
+No. I didn'd create any new variables.
 
 ### Of the features you investigated, were there any unusual distributions? \
 ### Did you perform any operations on the data to tidy, adjust, or change the form \
@@ -165,18 +162,13 @@ is still the same.
 
 # Bivariate Plots Section
 
-> **Tip**: Based on what you saw in the univariate plots, what relationships
-between variables might be interesting to look at in this section? Don't limit
-yourself to relationships between a main output feature and one of the
-supporting variables. Try to look at relationships between supporting variables
-as well.
 ### Correlation Matrix
 ```{r echo=FALSE, Bivariate_Plots}
-winedata <-raw %>% select(c(2:13))
-correlation <- cor(winedata)
+correlation <- cor(raw)
 round(correlation,digits = 3)
 corrplot(correlation)
 ```
+
 
 From the result, we can find out that quality has higher positive correlation\
 with alcohol(0.47),sulphates(0.25),citric acid(0.22) and fixed acid(0.124). It \
@@ -245,6 +237,7 @@ The relationship between pH and fixed/total acidity they have negative correlati
 The bivariate analysis helped in improving the insight into the relationship between quality and variables such as residual sugar,density and citric acid.It was found that the presence of these variables don't have much impact on the quality of red wines.
 
 ### What was the strongest relationship you found?
+#########################
 The quality of red wine is highly dependant on volatile acidity and alcohol content of the red wine. The quality and volatile acidity has negative correlation. The quality and alcohol content has a positive correlation between them.
 
 ----
@@ -264,13 +257,13 @@ will do that.
 # Multivariate Analysis
 
 ### Talk about some of the relationships you observed in this part of the \
-investigation. Were there features that strengthened each other in terms of \
-looking at your feature(s) of interest?
+### investigation. Were there features that strengthened each other in terms of \
+### looking at your feature(s) of interest?
 
 ### Were there any interesting or surprising interactions between features?
 
 ### OPTIONAL: Did you create any models with your dataset? Discuss the \
-strengths and limitations of your model.
+### strengths and limitations of your model.
 
 ------
 
@@ -319,6 +312,11 @@ future work that could be done with the dataset.
 
 
 References:
+Correlation Matrix
+https://rstudio-pubs-static.s3.amazonaws.com/240657_5157ff98e8204c358b2118fa69162e18.html
+
+http://genomicsclass.github.io/book/pages/dplyr_tutorial.html
+
 https://github.com/SThornewillvE/Udacity-Project---Exploring-Wine-Data/blob/master/investigating-a-dataset.Rmd
 
 https://github.com/anilsai/Explorartory-data-Analytics_-R-_Udacity-_Wine-Data/blob/master/Wine_quality_Anil%20Bodepudi_new.Rmd
