@@ -64,12 +64,16 @@ table(raw$quality)
 ```
 ```{r}
 knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
-ggplot(aes(as.factor(quality),fill= factor(quality)), data = raw) + 
+plot1 <- ggplot(aes(as.factor(quality),fill= factor(quality)), data = raw) + 
   geom_bar() +
   theme_replace() + xlab("quality")+
-  scale_fill_brewer(type = 'seq', palette = 14,guide=guide_legend(title = 'Quality'))
+  scale_fill_brewer(type = 'seq', palette = 14,guide=guide_legend(title = 'Quality'))+
+  ggtitle('The Distribution of Quality ')
+plot1
 ```
-The plot shows the wine quality basically has a normal distribution. Most of the rating are around 5 and 6. 
+The plot shows the wine quality basically has a normal distribution. Most of 
+the quality are around 5 and 6. 
+
 ```{r}
 # raw$rating <- ifelse(raw$quality <5, 
 #                      'bad', ifelse( raw$quality<7, 'average','good'))
@@ -118,11 +122,34 @@ skewed distributions, with means their means are larger than median.
 3.Residual sugar and chlorides are also right skewed and they have extreme
 outliers.
 
-```{r,test}
-#ggplot(data= raw,aes(x=fixed.acidity))+geom_histogram(binwidth = 0.4)
-#summary(raw$fixed.acidity)
-#ggplot(data= raw,aes(x=volatile.acidity))+geom_histogram(binwidth = 0.1)
+### Rescale features
+
+Skewed and long tail data can be transformed toward more normally distribution 
+by taking square root or log function. Since residual sugar have lower 
+correlation with quality (see Bivariate Plots Section), I just log-transformed 
+the sulphates to compare the differences.
+
+```{r,log sulphates}
+# sulphates 
+
+p1<-ggplot(aes(x = sulphates), data = raw)+
+        geom_histogram(colour="black", fill="pink" 
+                      ,binwidth = 0.1)
+
+# log sulphates
+raw$log_sulphates <- log(raw$sulphates)
+
+p2<-ggplot(aes(x = log_sulphates), data = raw)+
+          xlab("log of sulphates")+
+          geom_histogram(colour="black", fill="pink", 
+                         binwidth = 0.1)
+
+grid.arrange(p1,p2,ncol=1)
+
 ```
+For the first plot, we can see feature Sulphates have really large numbers and 
+is right skewed. After log transformation, the sulphates is more normal distributed. 
+
 
 # Univariate Analysis
 
@@ -155,39 +182,24 @@ No. I didn'd create any new variables.
 
 For the variable "Quality", there are no unusual distributions. It's basically 
 normal distributed. For the other features such as sulphates and acidity,they 
-are long-tailed.I tried to take log10 transformation because it will help us 
-discover the trend.But after the transformation it seems the distribution
-is still the same. 
+are long-tailed.I tried log transformation because the it will be more normally 
+distributed after log transformation.
+ 
 
 
 # Bivariate Plots Section
 
 ### Correlation Matrix
 ```{r echo=FALSE, Bivariate_Plots}
-correlation <- cor(raw)
+correlation <- cor(raw[2:13])
 round(correlation,digits = 3)
 corrplot(correlation)
 ```
-
 
 From the result, we can find out that quality has higher positive correlation\
 with alcohol(0.47),sulphates(0.25),citric acid(0.22) and fixed acid(0.124). It \
 also has higher negative correlation with valatile acidity(-0.39),total sulfur
 dioxide(-0.185) and density(-0.175).
-
-Observations about relationship between supporting variables:
-
-1.All the acid features(fixed acidity, volatile acidity and citric acidity) are
-highly correlated.Because volatile Acidity provides unpleasant and vinegar taste
-to wines, the lower the volatile acidity, the better the wine is.While citric 
-acid provides freshness taste to wines. Thus, better red wine would contain
-higher citric acid rate. In this dataset, I mainly focus on volatile acidity and 
-citric acid because compared to fixed acidity, they seems have higher correlation
-with wine quality.
-2.Acid features have higher correlation with ph.This makes sense because 
-any ph number less than 7 is considered an acid.
-3.Acid feature have higher correlation with sulphates and density.
-4.Density has higher positive correlation with residual sugar and chlorides.
 
 ### Boxplot of Quality 
 
@@ -214,7 +226,9 @@ quality_plot('factor(quality)', 'pH', 'pH'),
 quality_plot('factor(quality)', 'sulphates', 'sulphates (g/dm^3)'),
 quality_plot('factor(quality)', 'alcohol', 'alcohol (volume %)'),
  
-ncol= 4)
+ncol= 4,
+top = "Quality & All Features (Boxplot)")
+
 ```
 
 Based on the plots above, we can infer good wines have the following attribures:
@@ -228,87 +242,178 @@ make the wine taset bad so
 ### investigation. How did the feature(s) of interest vary with other features in \
 ### the dataset?
 
-The bivarite analysis gave an insight into the correlation between quality and other variables with the help of correlation coefficient and scatterplot.It was observed that quality of red wine improves with the decreases in volatile acidity. The alcohol content in red wine also improves the wine quality. From the correlation matrix it was also observed that residual sugar and other parameters don't have much effect on the quality of red wine.
+The top 5 features correlated with red wine quality:
+1. Density (-0.496)
+2. Alcohol (0.476)
+3. Volatile acidity (-0.39)
+4. Sulphates (0.251)
+5. Citric acid (0.22)
+From this result we can find out, good red wine tend to have lower density and 
+valatile acidity and higher alcohol, sulphates and citric acid.
+
+```{r}
+cor.test(raw$quality, raw$density,method='pearson') 
+cor.test(raw$quality, raw$alcohol,method='pearson')
+cor.test(raw$quality, raw$volatile.acidity,method='pearson') 
+cor.test(raw$quality, raw$sulphates,method='pearson') 
+cor.test(raw$quality, raw$citric.acid,method='pearson') 
+```
+From the Pearson's correlation test, we can find out density is less correlated with quality
+compared to other features.
+
+It's also observed free sulfur dioxide and residual sugar don't have much effect 
+on the quality of red wine.
+
 
 ### Did you observe any interesting relationships between the other features \
 ### (not the main feature(s) of interest)?
-The relationship between pH and fixed/total acidity they have negative correlation i.e., as pH value increases acidity content decreases. Also, pH is negatively correlated with the density of the red wine. And density of the red wine is also having negative correlation with the alcohol content in the red wine. It is also found that citric acid is positively correlated with fixed acidity of red wine but has a negative correlation with volatile acidity.
 
-The bivariate analysis helped in improving the insight into the relationship between quality and variables such as residual sugar,density and citric acid.It was found that the presence of these variables don't have much impact on the quality of red wines.
+Observations about relationship between supporting variables:
+
+1.All the acid features(fixed acidity, volatile acidity and citric acidity) are
+highly correlated.Because volatile Acidity provides unpleasant and vinegar taste
+to wines, the lower the volatile acidity, the better the wine is.While citric 
+acid provides freshness taste to wines. Thus, better red wine would contain
+higher citric acid rate. In this dataset, I mainly focus on volatile acidity and 
+citric acid because compared to fixed acidity, they seems have higher correlation
+with wine quality.
+2.Acid features have higher correlation with ph.This makes sense because 
+any ph number less than 7 is considered an acid.
+3.Acid feature have higher correlation with sulphates and density.
+4.Density has higher positive correlation with residual sugar and chlorides.
 
 ### What was the strongest relationship you found?
-#########################
-The quality of red wine is highly dependant on volatile acidity and alcohol content of the red wine. The quality and volatile acidity has negative correlation. The quality and alcohol content has a positive correlation between them.
+The relationship between total sulfur dioxide and free sulfur dioxide.The 
+correlation is 0.668.
+
 
 ----
 # Multivariate Plots Section
 
-> **Tip**: Now it's time to put everything together. Based on what you found in
-the bivariate plots section, create a few multivariate plots to investigate
-more complex interactions between variables. Make sure that the plots that you
-create here are justified by the plots you explored in the previous section. If
-you plan on creating any mathematical models, this is the section where you
-will do that.
-
 ```{r echo=FALSE, Multivariate_Plots}
+ggplot(raw, aes(y=alcohol,x=quality,color = volatile.acidity ) )+
+        geom_jitter(alpha=1/2,size=3)+
+        xlab("wine quality") + ylab("alcohol") +
+        scale_colour_gradient2(low="blue", high="red",
+                               mid="pink",midpoint = 0.8)
 
 ```
+
+We can add another feature, the log scale of sulphates.In order to visualize 
+the result, we can classify the quality into 3 categories, good, average and bad,
+and name this new feature as rating.
+
+```{r}
+# add new feature rating
+raw$rating <- ifelse(raw$quality <5, 
+                    'bad', ifelse( raw$quality<7, 'average','good'))
+raw$rating<- ordered(raw$rating, levels = c('bad','average','good'))
+
+plot3<- ggplot(raw, aes(x=alcohol,y=volatile.acidity)) +
+      geom_point(aes(color =  log_sulphates),alpha=1/2,size=2)+
+      xlab("alcohol") + ylab("volatile acidity") +
+      scale_colour_gradientn(colours = terrain.colors(10)) +
+facet_grid(rating ~ .) +
+   ggtitle("Wine Rating vs Log_sulphates vs violatile acidity vs alcohol")
+plot3
+
+```
+
 
 # Multivariate Analysis
 
 ### Talk about some of the relationships you observed in this part of the \
 ### investigation. Were there features that strengthened each other in terms of \
 ### looking at your feature(s) of interest?
+For the first plot, we can observe higher quality wine have higher alcohol and 
+lower volatile acidity. For the second plot, we can see higher quality wine have
+higher alcohol (x-axis),lower volatile acidity (y-axis) and higher sulphates (hue).
 
 ### Were there any interesting or surprising interactions between features?
-
-### OPTIONAL: Did you create any models with your dataset? Discuss the \
-### strengths and limitations of your model.
+It's interesting to find out that in second plot if volatile acidity is lower,
+sulphates will be higher.
 
 ------
 
 # Final Plots and Summary
 
-> **Tip**: You've done a lot of exploration and have built up an understanding
-of the structure of and relationships between the variables in your dataset.
-Here, you will select three plots from all of your previous exploration to
-present here as a summary of some of your most interesting findings. Make sure
-that you have refined your selected plots for good titling, axis labels (with
-units), and good aesthetic choices (e.g. color, transparency). After each plot,
-make sure you justify why you chose each plot by describing what it shows.
-
-### Plot One
+### Plot One: The histogram of "Quality"
 ```{r echo=FALSE, Plot_One}
-
+plot1
 ```
 
 ### Description One
+The wine quality basically has a normal distribution. Most of 
+the quality are 5 and 6. Followed by quality 7 and quality 4. Quality 8 followed
+by quality 3 are the least available. 
+
+
 
 
 ### Plot Two
 ```{r echo=FALSE, Plot_Two}
+quality_plot <- function (x, y, ylab) {
+return (ggplot(data = raw, aes_string(x,y)) +
+geom_boxplot(fill = 'pink') +
+xlab ('quality') + ylab(ylab))
 
+}
+
+grid.arrange( quality_plot( 'factor(quality)', 'fixed.acidity',
+                            'fixed.acidity(g/dm^3)'), 
+quality_plot('factor(quality)', 'volatile.acidity', 'volatile.acidity(g/dm^3)'),
+quality_plot('factor(quality)', 'citric.acid', 'citric.acid (g / dm^3)'),
+quality_plot('factor(quality)', 'residual.sugar', 'residual.sugar (g / dm^3)'),
+quality_plot('factor(quality)', 'chlorides', 'chlorides (g / dm^3)'),
+quality_plot('factor(quality)', 'free.sulfur.dioxide', 
+             'free.sulphur.dioxide (g / dm^3)'),
+quality_plot('factor(quality)', 'total.sulfur.dioxide',
+             'total.sulphur.dioxide (g / dm^3)'),
+quality_plot('factor(quality)', 'density', 'density (g/cm^3)'),
+quality_plot('factor(quality)', 'pH', 'pH'),
+quality_plot('factor(quality)', 'sulphates', 'sulphates (g/dm^3)'),
+quality_plot('factor(quality)', 'alcohol', 'alcohol (volume %)'),
+ 
+ncol= 4,
+top = "Quality & All Features (Boxplot)")
 ```
 
 ### Description Two
-
+Based on the plots above, we can infer good wines have the following attribures:
+1.Lower fixed acidity, volatile acidity, density and ph.All these features would 
+make the wine taset bad so
+2.Higher alcohol,sulphates and citric acidity.
 
 ### Plot Three
 ```{r echo=FALSE, Plot_Three}
-
+plot3
 ```
 
 ### Description Three
+Higher quality wine have higher alcohol (x-axis),lower volatile acidity (y-axis)
+and higher sulphates (hue).
+
 
 ------
 
 # Reflection
 
-> **Tip**: Here's the final step! Reflect on the exploration you performed and
-the insights you found. What were some of the struggles that you went through?
-What went well? What was surprising? Make sure you include an insight into
-future work that could be done with the dataset.
+From this project, I find out that higher quality red wine have higher alcohol 
+,lower volatile acidity and higher sulphates.I was surprising to found out that
+some chemical parameters such as residual sugar, chlorides, free sulfur dioxide 
+and total sulfur dioxide did not have much impact on the quality of red wine.
 
+For the third plot,at first, I didn't use log transformation to deal with the 
+sulphates data. The result looked so confusing because it's basically all green 
+dots in the plot.After I use the log transformation, the trend looks more obvious.
+
+The analysis could have been performed better if there was more data on other
+qualities of red wines available. The results would be more accurate if more data
+was availabe. It's also possible the results would be totally different with more
+data.
+
+For future explorations I can combine the red wine dataset with the dataset for
+white wine to compare analyze the differences. 
 
 
 References:
@@ -316,6 +421,8 @@ Correlation Matrix
 https://rstudio-pubs-static.s3.amazonaws.com/240657_5157ff98e8204c358b2118fa69162e18.html
 
 http://genomicsclass.github.io/book/pages/dplyr_tutorial.html
+
+https://github.com/Dalaska/Udacity-Red-Wine-Quality/blob/master/redwine_final.rmd
 
 https://github.com/SThornewillvE/Udacity-Project---Exploring-Wine-Data/blob/master/investigating-a-dataset.Rmd
 
